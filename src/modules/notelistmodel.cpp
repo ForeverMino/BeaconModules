@@ -1,4 +1,5 @@
 #include "notelistmodel.h"
+#include <optional>
 
 namespace Beacon::Notes
 {
@@ -32,7 +33,7 @@ QVariant NoteListModel::data(const QModelIndex &index, int role) const
     switch (role)
     {
     case noteIdRole:
-        return m_savedNotes.at(static_cast<size_t>(index.row())).id;
+        return m_savedNotes.at(static_cast<size_t>(index.row())).noteId;
         break;
     case noteNameRole:
         return m_savedNotes.at(static_cast<size_t>(index.row())).noteName;
@@ -44,7 +45,7 @@ QVariant NoteListModel::data(const QModelIndex &index, int role) const
         return m_savedNotes.at(static_cast<size_t>(index.row())).updatedDate;
         break;
     case noteContentRole:
-        return m_savedNotes.at(static_cast<size_t>(index.row())).content;
+        return m_savedNotes.at(static_cast<size_t>(index.row())).noteContent;
         break;
     default:
         return {};
@@ -73,7 +74,7 @@ bool NoteListModel::removeNote(int noteId)
 
     for(size_t i = 0; i < m_savedNotes.size(); ++i)
     {
-        if(m_savedNotes.at(i).id == noteId)
+        if(m_savedNotes.at(i).noteId == noteId)
         {
             const int row = static_cast<int>(i);
 
@@ -93,7 +94,7 @@ bool NoteListModel::renameNote(int noteId, const QString &newName)
 {
     for (size_t i = 0; i < m_savedNotes.size(); ++i)
     {
-        if(m_savedNotes.at(i).id == noteId)
+        if(m_savedNotes.at(i).noteId == noteId)
         {
             const int row = static_cast<int>(i);
 
@@ -112,16 +113,33 @@ bool NoteListModel::updateNoteContent(int noteId, const QString& newContent)
 
     for(size_t i = 0; i < m_savedNotes.size(); ++i)
     {
-        if(m_savedNotes.at(i).id == noteId)
+        if(m_savedNotes.at(i).noteId == noteId)
         {
             const int row = static_cast<int>(i);
 
-            m_savedNotes.at(i).content = newContent;
+            m_savedNotes.at(i).noteContent = newContent;
             m_savedNotes.at(i).updatedDate = QDateTime::currentDateTime();
             emit dataChanged(index(row), index(row), {noteContentRole, updatedDateRole});
             return true;
         }
     }
     return false;
+}
+
+std::optional<Note> NoteListModel::getNoteById(int noteId) const
+{
+
+    if(noteId <= 0 ) return std::nullopt;
+
+    for(const auto& note : m_savedNotes)
+    {
+        if(note.noteId == noteId)
+        {
+
+            return note;
+        }
+    }
+
+    return std::nullopt;
 }
 }

@@ -89,7 +89,7 @@ ApplicationWindow {
                 {
                     id: noteEditor
                     wrapMode: TextArea.Wrap
-                    onTextEdited: NoteManager.updateNoteContent(root.selectedNoteId, text)
+                    onTextEdited: NoteManager.updateNote(root.selectedNoteId, text)
                 }
             }
 

@@ -5,26 +5,17 @@
 #include <QVariant>
 #include <QObject>
 #include <QDateTime>
-#include <vector>
 #include <QString>
 #include <QHash>
 #include <QByteArray>
 #include <QModelIndex>
 #include <QQmlEngine>
+#include <optional>
+#include "notetypes.h"
 
 
 namespace Beacon::Notes
 {
-
-struct Note
-{
-    int id = 0;
-    QString noteName;
-    QDateTime creationDate;
-    QDateTime updatedDate;
-    QString content;
-
-};
 
 class NoteListModel : public QAbstractListModel
 {
@@ -56,6 +47,7 @@ class NoteListModel : public QAbstractListModel
         bool updateNoteContent(int noteId, const QString& newContent);
 
         const std::vector<Note>& getSavedNotes() const {return m_savedNotes;}
+        std::optional<Note> getNoteById(int noteId) const;
 
     private:
 

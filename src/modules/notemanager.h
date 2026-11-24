@@ -4,7 +4,10 @@
 #include <QObject>
 #include <QQmlEngine>
 #include <QString>
+#include <QTimer>
+#include <unordered_set>
 #include "notelistmodel.h"
+#include "noterepository.h"
 
 namespace Beacon::Notes
 {
@@ -20,20 +23,26 @@ namespace Beacon::Notes
     public:
 
         explicit NoteManager(QObject *parent = nullptr);
+        ~NoteManager() override;
 
         NoteListModel* getNoteListModel()  { return &m_noteListModel; }
 
         Q_INVOKABLE bool createNote(const QString& noteName);
         Q_INVOKABLE bool deleteNote(int noteId);
         Q_INVOKABLE bool changeNoteName (int noteId, const QString& noteName);
+        Q_INVOKABLE bool updateNote(int noteId, const QString& newContent);
 
-        bool saveNote(int noteId);
-        bool loadNote(int noteId);
+
+
 
 
     private:
         NoteListModel m_noteListModel;
-        int m_nextNoteId = 1;
+        NoteRepository m_noteRepository;
+        QTimer m_saveTimer;
+        std::unordered_set<int> m_dirtyNoteIds;
+
+        void flushPendingSaves();
 
     };
 
