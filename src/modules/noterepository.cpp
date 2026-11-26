@@ -53,6 +53,19 @@ namespace Beacon::Notes
             return false;
         }
 
+        if(!query.exec("CREATE TABLE IF NOT EXISTS note_attachments ("
+                        "attachmentId INTEGER PRIMARY KEY AUTOINCREMENT,"
+                        "noteId INTEGER NOT NULL,"
+                        "fileName TEXT NOT NULL,"
+                        "filePath TEXT NOT NULL,"
+                        "addedDate TEXT NOT NULL,"
+                        "attachmentType TEXT NOT NULL,"
+                        "FOREIGN KEY (noteId) REFERENCES notes(noteId) ON DELETE CASCADE)"))
+        {
+            qWarning() << query.lastError().text();
+            return false;
+        }
+
         return true;
 
 
@@ -147,6 +160,78 @@ namespace Beacon::Notes
 
         query.prepare("DELETE FROM notes WHERE noteId = :noteId");
         query.bindValue(":noteId", noteId);
+
+        if(!query.exec())
+        {
+            qWarning() << query.lastError().text();
+            return false;
+        }
+        return true;
+    }
+
+    std::vector<NoteAttachment> NoteRepository::loadAttachmentsForNote(int noteId) const
+    {
+        std::vector<NoteAttachment> result;
+
+        QSqlDatabase db = QSqlDatabase::database(m_connectionName);
+        QSqlQuery query(db);
+
+        query.prepare("SELECT attachmentId, noteId, fileName, filePath, addedDate, attachmentType FROM note_attachments"
+                      " WHERE noteId = :noteId ORDER BY attachmentId ASC");
+        query.bindValue(":noteId", noteId);
+
+        if(!query.exec())
+        {
+            qWarning() << query.lastError().text();
+            return result;
+        }
+
+        while(query.next())
+        {
+            NoteAttachment attachment;
+
+            attachment.attachmentId = query.value(0).toInt();
+            attachment.noteId = query.value(1).toInt();
+            attachment.fileName = query.value(2).toString();
+            attachment.filePath = query.value(3).toString();
+            attachment.addedDate = QDateTime::fromString(query.value(4).toString(), Qt::ISODate);
+            attachment.fileType = attachmentTypeFromString(query.value(5).toString());
+
+            result.push_back(attachment);
+        }
+
+        return result;
+    }
+
+    int NoteRepository::insertAttachment(const NoteAttachment &attachment)
+    {
+        QSqlDatabase db = QSqlDatabase::database(m_connectionName);
+        QSqlQuery query(db);
+
+        query.prepare("INSERT INTO note_attachments (noteId,fileName,filePath,addedDate, attachmentType)"
+                      " VALUES (:noteId, :fileName, :filePath,:addedDate, :attachmentType)");
+        query.bindValue(":noteId", attachment.noteId);
+        query.bindValue(":fileName", attachment.fileName);
+        query.bindValue(":filePath", attachment.filePath);
+        query.bindValue(":addedDate", attachment.addedDate.toString(Qt::ISODate));
+        query.bindValue(":attachmentType", attachmentTypeToString(attachment.fileType));
+
+        if (!query.exec())
+        {
+            qWarning() << query.lastError().text();
+            return -1;
+        }
+
+        return query.lastInsertId().toInt();
+    }
+
+    bool NoteRepository::deleteAttachment(int attachmentId)
+    {
+        QSqlDatabase db = QSqlDatabase::database(m_connectionName);
+        QSqlQuery query(db);
+
+        query.prepare("DELETE FROM note_attachments WHERE attachmentId = :attachmentId");
+        query.bindValue(":attachmentId", attachmentId);
 
         if(!query.exec())
         {

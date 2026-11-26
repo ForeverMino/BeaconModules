@@ -21,6 +21,10 @@ namespace Beacon::Notes
         bool updateNote(const Note& note);
         bool deleteNote(int noteId);
 
+        std::vector<NoteAttachment> loadAttachmentsForNote(int noteId) const;
+        int insertAttachment(const NoteAttachment& attachment);
+        bool deleteAttachment(int attachmentId);
+
     private:
         QString m_connectionName = QStringLiteral("BeaconNotesConnection");
     };

@@ -82,6 +82,7 @@ bool NoteListModel::removeNote(int noteId)
             m_deletedNotes.push_back(m_savedNotes.at(i));
             m_savedNotes.erase(m_savedNotes.begin() + row);
             endRemoveRows();
+
             return true;
         }
     }

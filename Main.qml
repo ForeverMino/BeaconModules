@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls.Basic
+import QtQuick.Dialogs
 import BeaconModules
 
 
@@ -19,6 +20,7 @@ ApplicationWindow {
     property color reallyLight: "#e7e7e7"
     property color light: "#e0e0e0"
     property int selectedNoteId: -1
+    FileDialog { id: fileDialog; onAccepted: NoteManager.attachFile(root.selectedNoteId, selectedFile) }
 
     RowLayout
     {
@@ -32,7 +34,7 @@ ApplicationWindow {
             Button
             {
                 Layout.fillWidth: true
-                text: "+"
+                text: "+ New Note"
                 onClicked: NoteManager.createNote("")
             }
 
@@ -50,7 +52,8 @@ ApplicationWindow {
                     required property string noteContent
                     text: noteName
                     highlighted: root.selectedNoteId === noteId
-                    onClicked: {root.selectedNoteId = noteId; titleField.text = noteName; noteEditor.text = noteContent}
+                    onClicked: {root.selectedNoteId = noteId; titleField.text = noteName; noteEditor.text = noteContent;
+                        NoteManager.selectNote(noteId)}
 
                 }
             }
@@ -71,6 +74,12 @@ ApplicationWindow {
                                    noteEditor.text = ""}
                 }
 
+                Button
+                {
+                    text: "+ Attachment"
+                    onClicked: fileDialog.open()
+                }
+
                 TextField
                 {
                     id: titleField
@@ -80,16 +89,63 @@ ApplicationWindow {
 
             }
 
-            ScrollView
+            Item
             {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                TextArea
+                ScrollView
                 {
-                    id: noteEditor
-                    wrapMode: TextArea.Wrap
-                    onTextEdited: NoteManager.updateNote(root.selectedNoteId, text)
+                    anchors.fill: parent
+
+                    TextArea
+                    {
+                        id: noteEditor
+                        wrapMode: TextArea.Wrap
+                        onTextEdited: NoteManager.updateNote(root.selectedNoteId, text)
+                    }
+                }
+
+                DropArea
+                {
+                    anchors.fill: parent
+                    onDropped: (drop) => {
+                        if (drop.hasUrls) {
+                            for (let i = 0; i < drop.urls.length; ++i) {
+                                NoteManager.attachFile(root.selectedNoteId, drop.urls[i])
+                            }
+                        }
+                    }
+                }
+            }
+
+            ListView
+            {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 44
+                orientation: ListView.Horizontal
+                spacing: 8
+                clip: true
+                visible: count > 0
+                model: NoteManager.attachmentListModel
+                delegate: RowLayout
+                {
+                    required property int attachmentId
+                    required property string fileName
+                    required property string filePath
+                    required property string fileType
+
+                    Button
+                    {
+                        text: fileName
+                        onClicked: NoteManager.openAttachment(filePath)
+                    }
+
+                    Button
+                    {
+                        text: "X"
+                        onClicked: NoteManager.removeAttachment(attachmentId)
+                    }
                 }
             }
 

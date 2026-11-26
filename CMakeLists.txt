@@ -27,6 +27,7 @@ qt_add_qml_module(appBeaconModules
         SOURCES src/modules/notelistmodel.cpp
         SOURCES src/modules/noterepository.h src/modules/noterepository.cpp
         SOURCES src/modules/notetypes.h
+        SOURCES src/modules/attachmentlistmodel.h src/modules/attachmentlistmodel.cpp
 )
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
