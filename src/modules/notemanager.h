@@ -37,7 +37,7 @@ namespace Beacon::Notes
         Q_INVOKABLE bool updateNote(int noteId, const QString& newContent);
 
         Q_INVOKABLE void selectNote(int noteId);
-        Q_INVOKABLE bool attachFile(int noteId, const QUrl& fileUrl);
+        Q_INVOKABLE QString attachFile(int noteId, const QUrl& fileUrl);
         Q_INVOKABLE bool removeAttachment(int attachmentId);
         Q_INVOKABLE void openAttachment(const QString& filePath);
 

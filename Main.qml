@@ -20,7 +20,63 @@ ApplicationWindow {
     property color reallyLight: "#e7e7e7"
     property color light: "#e0e0e0"
     property int selectedNoteId: -1
-    FileDialog { id: fileDialog; onAccepted: NoteManager.attachFile(root.selectedNoteId, selectedFile) }
+
+    FileDialog {
+        id: fileDialog
+        onAccepted: root.attachAtCursor(selectedFile)
+    }
+
+    function attachAtCursor(fileUrl)
+    {
+        const html = NoteManager.attachFile(root.selectedNoteId, fileUrl)
+        if (html.length > 0)
+        {
+            noteEditor.insert(noteEditor.cursorPosition, html)
+            NoteManager.updateNote(root.selectedNoteId, noteEditor.text)
+        }
+    }
+
+    Action
+    {
+        id: boldAction
+        text: "B"
+        shortcut: StandardKey.Bold
+        enabled: root.selectedNoteId > 0
+        checkable: true
+        checked: noteEditor.cursorSelection.font.bold
+        onTriggered: {
+            noteEditor.cursorSelection.font.bold = !noteEditor.cursorSelection.font.bold
+            NoteManager.updateNote(root.selectedNoteId, noteEditor.text)
+        }
+    }
+
+    Action
+    {
+        id: italicAction
+        text: "I"
+        shortcut: StandardKey.Italic
+        enabled: root.selectedNoteId > 0
+        checkable: true
+        checked: noteEditor.cursorSelection.font.italic
+        onTriggered: {
+            noteEditor.cursorSelection.font.italic = !noteEditor.cursorSelection.font.italic
+            NoteManager.updateNote(root.selectedNoteId, noteEditor.text)
+        }
+    }
+
+    Action
+    {
+        id: underlineAction
+        text: "U"
+        shortcut: StandardKey.Underline
+        enabled: root.selectedNoteId > 0
+        checkable: true
+        checked: noteEditor.cursorSelection.font.underline
+        onTriggered: {
+            noteEditor.cursorSelection.font.underline = !noteEditor.cursorSelection.font.underline
+            NoteManager.updateNote(root.selectedNoteId, noteEditor.text)
+        }
+    }
 
     RowLayout
     {
@@ -46,15 +102,18 @@ ApplicationWindow {
                 model: NoteManager.noteListModel
                 delegate: ItemDelegate
                 {
-                    width: ListView.view.width;
+                    width: ListView.view.width
                     required property int noteId
                     required property string noteName
                     required property string noteContent
                     text: noteName
                     highlighted: root.selectedNoteId === noteId
-                    onClicked: {root.selectedNoteId = noteId; titleField.text = noteName; noteEditor.text = noteContent;
-                        NoteManager.selectNote(noteId)}
-
+                    onClicked: {
+                        root.selectedNoteId = noteId
+                        titleField.text = noteName
+                        noteEditor.text = noteContent
+                        NoteManager.selectNote(noteId)
+                    }
                 }
             }
         }
@@ -62,6 +121,8 @@ ApplicationWindow {
         ColumnLayout // note
         {
             enabled: root.selectedNoteId > 0
+            Layout.fillHeight: true
+            Layout.fillWidth: true
 
             RowLayout
             {
@@ -70,8 +131,13 @@ ApplicationWindow {
                 Button
                 {
                     text: "Delete"
-                    onClicked: if(NoteManager.deleteNote(root.selectedNoteId)) {root.selectedNoteId = -1; titleField.text = "";
-                                   noteEditor.text = ""}
+                    onClicked: {
+                        if (NoteManager.deleteNote(root.selectedNoteId)) {
+                            root.selectedNoteId = -1
+                            titleField.text = ""
+                            noteEditor.text = ""
+                        }
+                    }
                 }
 
                 Button
@@ -80,13 +146,16 @@ ApplicationWindow {
                     onClicked: fileDialog.open()
                 }
 
+                ToolButton { action: boldAction; font.bold: true }
+                ToolButton { action: italicAction; font.italic: true }
+                ToolButton { action: underlineAction; font.underline: true }
+
                 TextField
                 {
                     id: titleField
                     Layout.fillWidth: true
                     onTextEdited: NoteManager.changeNoteName(root.selectedNoteId, text)
                 }
-
             }
 
             Item
@@ -103,6 +172,9 @@ ApplicationWindow {
                         id: noteEditor
                         wrapMode: TextArea.Wrap
                         onTextEdited: NoteManager.updateNote(root.selectedNoteId, text)
+                        textFormat: TextEdit.RichText
+                        persistentSelection: true
+                        onLinkActivated: (link) => NoteManager.openAttachment(link)
                     }
                 }
 
@@ -112,7 +184,7 @@ ApplicationWindow {
                     onDropped: (drop) => {
                         if (drop.hasUrls) {
                             for (let i = 0; i < drop.urls.length; ++i) {
-                                NoteManager.attachFile(root.selectedNoteId, drop.urls[i])
+                                root.attachAtCursor(drop.urls[i])
                             }
                         }
                     }
@@ -148,10 +220,6 @@ ApplicationWindow {
                     }
                 }
             }
-
-            Layout.fillHeight: true
-            Layout.fillWidth: true
         }
     }
-
 }

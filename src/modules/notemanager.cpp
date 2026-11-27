@@ -141,25 +141,25 @@ void NoteManager::selectNote(int noteId)
     m_attachmentListModel.setAttachments(m_noteRepository.loadAttachmentsForNote(noteId));
 }
 
-bool NoteManager::attachFile(int noteId, const QUrl &fileUrl)
+QString NoteManager::attachFile(int noteId, const QUrl &fileUrl)
 {
-    if(noteId <= 0) return false;
+    if(noteId <= 0) return QString("");
 
     const QString sourcePath = fileUrl.toLocalFile();
 
     const QFileInfo info(sourcePath);
-    if (!info.exists() || !info.isFile()) return false;
+    if (!info.exists() || !info.isFile()) return QString("");
 
     const QString appData = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    if (appData.isEmpty()) return false;
+    if (appData.isEmpty()) return QString("");
 
     const QString attachmentsDir = appData + "/attachments";
-    if (!QDir().mkpath(attachmentsDir)) return false;
+    if (!QDir().mkpath(attachmentsDir)) return QString("");
 
     const QString uniqueName = QUuid::createUuid().toString(QUuid::WithoutBraces) + "_" + info.fileName();
 
     const QString destPath = attachmentsDir + "/" + uniqueName;
-    if (!QFile::copy(sourcePath, destPath)) return false;
+    if (!QFile::copy(sourcePath, destPath)) return QString("");
 
     NoteAttachment attachment;
     attachment.noteId = noteId;
@@ -195,12 +195,23 @@ bool NoteManager::attachFile(int noteId, const QUrl &fileUrl)
     if(newId <= 0)
     {
         QFile::remove(destPath);
-        return false;
+        return QString("");
     }
 
     attachment.attachmentId = newId;
 
-   return m_attachmentListModel.addAttachment(attachment);
+   m_attachmentListModel.addAttachment(attachment);
+
+   const QString fileUrlStr = QUrl::fromLocalFile(destPath).toString();
+
+   if(fileType == AttachmentType::Image)
+   {
+       return QString("<br><img src=\"%1\" width=\"320\"/><br>").arg(fileUrlStr);
+   }
+
+    return QString(" <a href=\"%1\">[%2: %3]</a> ").arg(fileUrlStr,
+                                                       attachmentTypeToString(fileType),info.fileName().toHtmlEscaped());
+
 }
 bool NoteManager::removeAttachment(int attachmentId)
 {
@@ -217,7 +228,8 @@ bool NoteManager::removeAttachment(int attachmentId)
 
 void NoteManager::openAttachment(const QString &filePath)
 {
-    QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
+    const QUrl url = filePath.startsWith("file:") ? QUrl(filePath) : QUrl::fromLocalFile(filePath);
+    QDesktopServices::openUrl(url);
 }
 
 
